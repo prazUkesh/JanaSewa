@@ -21,15 +21,48 @@ contract JanaSewa{
         fundOwner = msg.sender;
     }
 
-    // funding 
-    function fund() public payable{
-        require(block.timestamp < deadline, "Cannot fund!campaign deadline has came to an end");
-        require(msg.value > 0, "Cannot fund value less than 0!");
+    struct Tier{
+        string name;
+        uint amount;
+        uint backers;
     }
 
+    Tier[] public tiers;
+
+    // a special type of function
+    modifier onlyFundOwner(){
+        require(msg.sender == fundOwner,"not the fund owner!");
+        _; // runs rest of the code if the function is called by the fund owner 
+    }
+    // funding 
+    function fund(uint _tierIndex) public payable{
+        require(block.timestamp < deadline, "cannot fund after deadline" );
+        require( _tierIndex < tiers.length, "tier doesn't exists");
+        require(msg.value == tiers[_tierIndex].amount, "invalid amount");
+
+        tiers[_tierIndex].backers++;
+    }
+
+
+// adding fund tiers (as in different values)
+    function addTier(
+        string memory _name,
+        uint _amount 
+    )public onlyFundOwner{
+        require(_amount > 0, "amount must be greater than 0");
+       tiers.push(Tier(_name, _amount, 0));
+    }
+
+    function removeTier(uint _index) public{
+        require(_index < tiers.length,"Tier doesn't exist");
+        tiers[_index] = tiers[tiers.length -1];
+        tiers.pop();
+    }
+
+
+
     // withdrawing the fund by the owner
-    function withdraw() public {
-        require(msg.sender == fundOwner, "Fund can only be withdrawn by the Fund Owner!");
+    function withdraw() public  onlyFundOwner{
         require(address(this).balance >= fundGoal, "Cannot withdraw fund, insufficient fund (wait till it reaches  goal)!");
 
         uint balance = address(this).balance;
@@ -37,7 +70,7 @@ contract JanaSewa{
 
         payable(fundOwner).transfer(balance);
     }
-
+    // CHECK FUND BALANCE
     function checkFundBalance() public view returns(uint){
         return address(this).balance;
     }
