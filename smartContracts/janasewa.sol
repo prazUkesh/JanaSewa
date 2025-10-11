@@ -7,6 +7,7 @@ contract JanaSewa{
     uint public fundGoal;
     uint public deadline;
     address public fundOwner;
+    bool public paused;
 
     enum campaignState {Active, Sucessful, Failed}
     campaignState public state;
@@ -50,8 +51,13 @@ contract JanaSewa{
         require(state == campaignState.Active, "campaign state is not acive");
         _;
     }
+
+    modifier notPaused(){
+        require(!paused, "campaign is paused!");
+        _;
+    }
     // funding
-    function fund(uint _tierIndex) public payable campaignOpen{
+    function fund(uint _tierIndex) public payable campaignOpen notPaused{
         require( _tierIndex < tiers.length, "tier doesn't exists");
         require(msg.value == tiers[_tierIndex].amount, "invalid amount");
  
@@ -118,4 +124,24 @@ function checkAndUpdateCampaignState() internal{
     function hasFunded(address _backer, uint _tierIndex)public view returns(bool) {
         return backers[_backer].fundedTiers[_tierIndex];
     }
+
+    function getTiers() public view returns(Tier[] memory){
+        return tiers;
+    }
+
+    function togglePause() public onlyFundOwner{
+        paused =!paused;
+    }
+
+    function getCampaignStatus() public view returns(campaignState){
+        if (state == campaignState.Active && block.timestamp < deadline){
+            return address(this).balance >= fundGoal? campaignState.Sucessful : campaignState.Failed;
+        }
+        return state;
+    }
+
+    function extendDeadline(uint daysToAdd) public onlyFundOwner campaignOpen {
+        deadline += daysToAdd * 1 days;
+    }
+
 }
