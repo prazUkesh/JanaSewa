@@ -13,6 +13,7 @@ contract JanaSewa{
     campaignState public state;
 
     constructor(
+        address _owner,
         string memory _fundName,
         string memory _fundDescription,
         uint256  _fundGoal,
@@ -22,7 +23,7 @@ contract JanaSewa{
         fundDescription = _fundDescription;
         fundGoal = _fundGoal;
         deadline = block.timestamp + ( _durationInDays * 1 days);
-        fundOwner = msg.sender;
+        fundOwner = _owner;
         state = campaignState.Active;
     }
 
